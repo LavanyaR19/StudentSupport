@@ -1,30 +1,17 @@
-from werkzeug.security import generate_password_hash
 from db import get_db
+from werkzeug.security import generate_password_hash
 
+users = [("Student Demo", "student@demo.com", "student123", "STUDENT"), ("Support Staff", "staff@demo.com", "staff123", "STAFF"), ("System Admin", "admin@demo.com", "admin123", "ADMIN")]
 
-users = [
-    ("Student Demo", "student@demo.com", generate_password_hash("student123"), "STUDENT"),
-    ("Support Staff", "staff@demo.com", generate_password_hash("staff123"), "STAFF"),
-    ("System Admin", "admin@demo.com", generate_password_hash("admin123"), "ADMIN"),
-]
-
-conn = get_db()
-cur = conn.cursor()
-
-for name, email, password_hash, role in users:
-    cur.execute(
-        """
-        UPDATE users
-        SET name = ?, password_hash = ?, role = ?
-        WHERE email = ?
-        """,
-        (name, password_hash, role, email)
-    )
-
-conn.commit()
-conn.close()
-
-print("Demo user passwords updated successfully.")
+db = get_db()
+cur = db.cursor()
+for name, email, password, role in users:
+    cur.execute("SELECT id FROM users WHERE email=%s", (email,))
+    if not cur.fetchone():
+        cur.execute("INSERT INTO users(name,email,password_hash,role) VALUES(%s,%s,%s,%s)", (name, email, generate_password_hash(password), role))
+db.commit()
+db.close()
+print("Demo users created.")
 print("student@demo.com / student123")
 print("staff@demo.com / staff123")
 print("admin@demo.com / admin123")
